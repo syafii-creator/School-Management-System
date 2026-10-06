@@ -18,21 +18,20 @@ class SchoolClass extends Model
     protected $fillable = [
         'class_name',
         'academic_year',
+        'homeroom_teacher_id', // Gunakan homeroom_teacher_id
     ];
 
-    // Relasi ke Model Teacher (Wali Kelas)
+    // Relasi ke Model Teacher
     public function teacher()
     {
         return $this->belongsTo(Teacher::class, 'homeroom_teacher_id', 'teacher_id');
     }
 
-    // Alias relasi untuk wali kelas agar dipanggil homeroomTeacher
     public function homeroomTeacher()
     {
         return $this->belongsTo(Teacher::class, 'homeroom_teacher_id', 'teacher_id');
     }
 
-    // Relasi ke Model Student
     public function students()
     {
         return $this->hasMany(Student::class, 'class_id', 'class_id');

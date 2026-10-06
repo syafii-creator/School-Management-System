@@ -5,13 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class SubjectController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $subjects = Subject::all();
+        $search = $request->input('search');
+
+        $subjects = Subject::when($search, function ($query, $search) {
+                $query->where('subject_name', 'like', "%{$search}%")
+                      ->orWhere('subject_code', 'like', "%{$search}%")
+                      ->orWhere('credits', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
         return view('subjects.index', compact('subjects'));
     }
 
@@ -91,14 +100,11 @@ class SubjectController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        // Cari data berdasarkan subject_id atau slug
         $subject = Subject::where('subject_id', $id)
             ->orWhere('slug', $id)
             ->first();
 
         if ($subject) {
-            // Karena Model menggunakan SoftDeletes, perintah delete() ini
-            // TIDAK menghapus data dari DB, melainkan mengarsipkan (mengisi deleted_at)
             $subject->delete();
 
             return redirect()->route('subjects.index')->with('success', 'Subject archived successfully!');

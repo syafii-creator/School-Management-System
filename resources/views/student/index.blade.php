@@ -22,16 +22,40 @@
     </div>
 @endif
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Header & Toolbar Search -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Student Data</h4>
-        <p class="text-muted small mb-0">Manage student records and class assignments.</p>
+        <p class="text-muted small mb-0">Manage student profiles and class assignments.</p>
     </div>
-    @if(auth()->user()->role === 'admin')
-        <a href="{{ route('students.create') }}" class="btn btn-primary fw-bold px-3 py-2 rounded-3">
-            <i class="bi bi-plus-lg me-1"></i> Add Student
-        </a>
-    @endif
+
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <!-- Form Search -->
+        <form action="{{ route('students.index') }}" method="GET" class="d-flex gap-2">
+            <div class="input-group">
+                <input type="text"
+                       name="search"
+                       class="form-control bg-white border-0 shadow-sm ps-3"
+                       placeholder="Search student, NISN, class..."
+                       value="{{ request('search') }}"
+                       style="min-width: 220px;">
+                <button type="submit" class="btn btn-primary fw-bold shadow-sm px-3">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+            @if(request('search'))
+                <a href="{{ route('students.index') }}" class="btn btn-light border shadow-sm" title="Reset Search">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            @endif
+        </form>
+
+        @if(auth()->user()->role === 'admin')
+            <a href="{{ route('students.create') }}" class="btn btn-primary fw-bold px-3 py-2 rounded-3 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> Add Student
+            </a>
+        @endif
+    </div>
 </div>
 
 <!-- Student Table Card -->
@@ -41,10 +65,11 @@
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
                     <th class="ps-4" style="width: 60px;">NO</th>
-                    <th>NIS</th>
-                    <th>STUDENT NAME</th>
+                    <th>NISN</th>
+                    <th>FULL NAME</th>
                     <th>CLASS</th>
                     <th class="text-center">DATE OF BIRTH</th>
+                    <th class="text-center">CREATED DATE</th>
                     @if(auth()->user()->role === 'admin')
                         <th class="text-end pe-4">ACTION</th>
                     @endif
@@ -53,18 +78,39 @@
             <tbody>
                 @forelse($students as $index => $student)
                 <tr>
-                    <td class="ps-4 text-secondary fw-medium">{{ $index + 1 }}</td>
-                    <td class="text-secondary fw-medium">{{ $student->nis }}</td>
-                    <td class="fw-bold text-dark">{{ $student->full_name ?? $student->name }}</td>
+                    <td class="ps-4 text-secondary fw-medium">{{ $students->firstItem() + $index }}</td>
+
+                    <!-- NISN / NIS -->
+                    <td class="text-secondary fw-medium">
+                        {{ $student->nisn ?? $student->nis ?? '-' }}
+                    </td>
+
+                    <!-- Full Name -->
+                    <td class="fw-bold text-dark">
+                        {{ $student->full_name ?? $student->name }}
+                    </td>
+
+                    <!-- Class -->
                     <td>
                         <span class="badge bg-light text-dark border px-2 py-1">
-                            {{ $student->schoolClass->class_name ?? 'Unassigned' }}
+                            {{ $student->schoolClass->class_name ?? $student->class->class_name ?? 'Unassigned' }}
                         </span>
                     </td>
-                    <!-- Format Tanggal Indonesia Sesuai Brief (Contoh: 1 Feb 2024) -->
-                    <td class="text-center text-muted small">
-                        {{ \Carbon\Carbon::parse($student->date_of_birth)->locale('id')->translatedFormat('j M Y') }}
+
+                    <!-- Date of Birth -->
+                    <td class="text-center text-secondary small fw-medium">
+                        @if(!empty($student->date_of_birth))
+                            {{ \Carbon\Carbon::parse($student->date_of_birth)->locale('id')->translatedFormat('j M Y') }}
+                        @else
+                            -
+                        @endif
                     </td>
+
+                    <!-- Created Date -->
+                    <td class="text-center text-muted small">
+                        {{ \Carbon\Carbon::parse($student->created_at)->locale('id')->translatedFormat('j M Y') }}
+                    </td>
+
                     @if(auth()->user()->role === 'admin')
                         <td class="text-end pe-4">
                             <a href="{{ route('students.edit', $student->student_id ?? $student->id) }}" class="btn btn-sm btn-warning text-dark fw-semibold px-3 me-1">
@@ -82,11 +128,30 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ auth()->user()->role === 'admin' ? '6' : '5' }}" class="text-center py-4 text-muted">No student records found.</td>
+                    <td colspan="{{ auth()->user()->role === 'admin' ? '7' : '6' }}" class="text-center py-4 text-muted">
+                        @if(request('search'))
+                            No student records found matching "{{ request('search') }}".
+                        @else
+                            No student records found.
+                        @endif
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Footer -->
+    @if($students->total() > 0)
+    <div class="card-footer bg-white border-top-0 py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+        <small class="text-muted">
+            Showing {{ $students->firstItem() ?? 0 }} to {{ $students->lastItem() ?? 0 }} of {{ $students->total() }} entries
+        </small>
+        <div>
+            {{ $students->links() }}
+        </div>
+    </div>
+    @endif
 </div>
 @endsection
+

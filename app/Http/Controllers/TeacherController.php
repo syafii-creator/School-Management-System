@@ -11,11 +11,26 @@ use Illuminate\Support\Str;
 
 class TeacherController extends Controller
 {
-    public function index()
-    {
-        $teachers = Teacher::with('subject')->get();
-        return view('teachers.index', compact('teachers'));
-    }
+    public function index(Request $request)
+{
+    $search = $request->input('search');
+
+    $teachers = Teacher::with('subject')
+        ->when($search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%")
+                  ->orWhereHas('subject', function ($subQuery) use ($search) {
+                      $subQuery->where('subject_name', 'like', "%{$search}%");
+                  });
+            });
+        })
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+    return view('teachers.index', compact('teachers'));
+}
 
     public function create()
     {

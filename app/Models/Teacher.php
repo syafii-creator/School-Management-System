@@ -37,6 +37,12 @@ class Teacher extends Model
         return $this->belongsTo(Subject::class, 'subject_id', 'subject_id');
     }
 
+    // Relasi ke Kelas sebagai Wali Kelas (1 Guru -> Banyak Kelas)
+    public function classes()
+    {
+        return $this->hasMany(SchoolClass::class, 'homeroom_teacher_id', 'teacher_id');
+    }
+
     // Accessor pendukung (Fallback membaca full_name terlebih dahulu)
     public function getFullNameAttribute()
     {

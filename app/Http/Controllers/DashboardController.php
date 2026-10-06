@@ -14,16 +14,16 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // 1. Tampilan Dashboard Khusus Student
-        if ($user->role === 'student') {
+        // 1. Tampilan Dashboard Khusus Student / Siswa
+        if (in_array($user->role, ['student', 'siswa'])) {
             $student = Student::with(['class.teacher'])->where('user_id', $user->user_id)->first();
             $subjects = Subject::all();
 
             return view('dashboard.student', compact('student', 'subjects'));
         }
 
-        // 2. Tampilan Dashboard Khusus Teacher
-        if ($user->role === 'teacher') {
+        // 2. Tampilan Dashboard Khusus Teacher / Guru
+        if (in_array($user->role, ['teacher', 'guru'])) {
             $teacher = Teacher::with('subject')->where('user_id', $user->user_id)->first();
             $myClasses = SchoolClass::where('homeroom_teacher_id', $teacher->teacher_id ?? null)->get();
             $totalStudents = Student::count();
